@@ -1,4 +1,4 @@
-package dht11
+package drivers
 
 import (
 	"errors"
@@ -11,13 +11,17 @@ import (
 
 type DHT11 struct {
 	PinNo        uint8
-	pin          rpio.Pin
+	pin          *rpio.Pin
 	val          []uint8
 	closeFunc    func() error
 	lastReadTime time.Time
 }
 
-func (d DHT11) Init() error {
+func NewDHT11() *DHT11 {
+	return &DHT11{PinNo: 4}
+}
+
+func (d *DHT11) Init() error {
 	err := rpio.Open()
 	if err != nil {
 		return errors.New("init error: " + err.Error())
@@ -28,15 +32,12 @@ func (d DHT11) Init() error {
 	}
 
 	pin := rpio.Pin(d.PinNo)
-	d.pin = pin
-
-	d.pin.Output()
-	d.pin.High()
+	d.pin = &pin
 
 	return nil
 }
 
-func (d DHT11) ReadData() (rh float64, tmp float64, err error) {
+func (d *DHT11) ReadData() (rh float64, tmp float64, err error) {
 	if !d.lastReadTime.IsZero() && time.Since(d.lastReadTime).Milliseconds() <= 1000 {
 		return -1, -1, errors.New("read interval must be greater than 1 seconds")
 	}
@@ -78,11 +79,15 @@ func (d DHT11) ReadData() (rh float64, tmp float64, err error) {
 	return rh, tmp, err
 }
 
-func (d DHT11) Close() error {
+func (d *DHT11) Close() error {
 	return d.closeFunc()
 }
 
-func resetDht(p rpio.Pin) {
+func resetDht(p *rpio.Pin) {
+	p.Output()
+	p.High()
+	util.Delay(2)
+
 	// send start signal, must great than 18ms
 	p.Low()
 	util.Delay(25)
@@ -98,7 +103,7 @@ func resetDht(p rpio.Pin) {
 	util.DelayMicroseconds(30)
 }
 
-func checkDhtStatus(p rpio.Pin) bool {
+func checkDhtStatus(p *rpio.Pin) bool {
 	// dht response start: first 80us low, then 80us high
 	wait := 0
 	for wait < 100 {
@@ -127,7 +132,7 @@ func checkDhtStatus(p rpio.Pin) bool {
 	return true
 }
 
-func readBit(p rpio.Pin) rpio.State {
+func readBit(p *rpio.Pin) rpio.State {
 	// for per bit: first 50us low, then 26-70us high
 	// 26-28us high represents 0
 	// 70us high represents 1
