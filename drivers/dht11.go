@@ -17,8 +17,8 @@ type DHT11 struct {
 	lastReadTime time.Time
 }
 
-func NewDHT11() *DHT11 {
-	return &DHT11{PinNo: 4}
+func NewDHT11(pinNo uint8) *DHT11 {
+	return &DHT11{PinNo: pinNo}
 }
 
 func (d *DHT11) Init() error {

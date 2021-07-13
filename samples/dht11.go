@@ -13,7 +13,7 @@ func main() {
 
 func doDHT11() {
 	// 1、init
-	dht11 := drivers.NewDHT11()
+	dht11 := drivers.NewDHT11(4)
 	err := dht11.Init()
 	if err != nil {
 		fmt.Println("----------------------------------")
