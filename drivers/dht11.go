@@ -17,24 +17,22 @@ type DHT11 struct {
 	lastReadTime time.Time
 }
 
-func NewDHT11(pinNo uint8) *DHT11 {
-	return &DHT11{PinNo: pinNo}
-}
+func NewDHT11(pinNo uint8) (*DHT11, error) {
+	dht := &DHT11{PinNo: pinNo}
 
-func (d *DHT11) Init() error {
-	err := rpio.Open()
+	err := OpenRPi()
 	if err != nil {
-		return errors.New("init error: " + err.Error())
+		return nil, errors.New("init error: " + err.Error())
 	}
 
-	d.closeFunc = func() error {
-		return rpio.Close()
+	dht.closeFunc = func() error {
+		return CloseRPi()
 	}
 
-	pin := rpio.Pin(d.PinNo)
-	d.pin = &pin
+	pin := rpio.Pin(dht.PinNo)
+	dht.pin = &pin
 
-	return nil
+	return dht, nil
 }
 
 func (d *DHT11) ReadData() (rh float64, tmp float64, err error) {
@@ -67,14 +65,14 @@ func (d *DHT11) ReadData() (rh float64, tmp float64, err error) {
 		}
 	}
 
+	d.lastReadTime = time.Now()
+
 	if !checkData(d.val) {
 		return -1, -1, errors.New("data verification failed")
 	}
 
 	rh, err = strconv.ParseFloat(strconv.Itoa(int(d.val[0]))+"."+strconv.Itoa(int(d.val[1])), 32)
 	tmp, err = strconv.ParseFloat(strconv.Itoa(int(d.val[2]))+"."+strconv.Itoa(int(d.val[3])), 32)
-
-	d.lastReadTime = time.Now()
 
 	return rh, tmp, err
 }
@@ -125,11 +123,7 @@ func checkDhtStatus(p *rpio.Pin) bool {
 		util.DelayMicroseconds(1)
 		wait += 1
 	}
-	if wait >= 100 {
-		return false
-	}
-
-	return true
+	return wait < 100
 }
 
 func readBit(p *rpio.Pin) rpio.State {
@@ -165,8 +159,5 @@ func checkData(data []uint8) bool {
 		sum += int(v)
 	}
 
-	if sum != int(data[4]) {
-		return false
-	}
-	return true
+	return sum == int(data[4])
 }
