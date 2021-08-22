@@ -43,6 +43,8 @@ func (mq *MQ135) CalibrationRo(temperature float64, humidity float64) float64 {
 
 	val = val / float64(calibaraionSampleTimes)
 
+	//fmt.Println("Rs:", val)
+
 	//R0 = RS * (1 / A * c)-1/B
 	mq.Ro = val *
 		math.Pow(gasParas[mq.Gas][2]/
