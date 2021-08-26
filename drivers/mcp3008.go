@@ -25,7 +25,7 @@ func NewMCP3008(chip uint8, ch uint8, vref float64) (*MCP3008, error) {
 		return nil, errors.New("init error: " + err.Error())
 	}
 
-	rpio.SpiSpeed(1000000)
+	rpio.SpiSpeed(1350000)
 	rpio.SpiMode(0, 0)
 	rpio.SpiChipSelect(mcp.Chip) // Select CE0 slave
 

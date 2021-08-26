@@ -65,13 +65,29 @@ func main() {
 	fmt.Println("-----------mq135------------")
 	mq135 := drivers.NewMQ135(mcp, 5.0, "CO2", 10, 2.0)
 
-	voltage := mq135.MeasureVoltage()
-	fmt.Printf("voltage: %f \n", voltage)
-
 	fmt.Println("Calibrating...")
-	ro := mq135.CalibrationRo(tmp, rh)
-	fmt.Printf("ro: %f \n", ro)
+	ro := 0.0
+	sampleTimes := 60
+	for i := 0; i < sampleTimes; i++ {
+		// use realtime temperature and humidity
+		for {
+			rh, tmp, err = readTR(dht11)
+			if err == nil {
+				break
+			}
+			time.Sleep(time.Second * 2)
+		}
 
+		// Gas concentration in natural environment:
+		// CO2 414ppm
+		// Tol 0.0292ppm=0.11mg/m3、0.039ppm=0.15mg/m3、0.0532ppm=0.20mg/m3
+		ro += mq135.MeasureRo(tmp, rh, 414.0)
+		time.Sleep(time.Second * 2)
+	}
+	mq135.Ro = ro / float64(sampleTimes)
+	fmt.Printf("ro: %f \n", mq135.Ro)
+
+	// continuou measure gas concentration
 	for {
 		rh, tmp, err := readTR(dht11)
 		if err != nil {

@@ -9,13 +9,12 @@ import (
 var temperatureCorrection = []float64{2.2619e-5, -0.01479, 1.56}
 var humidityCorrection = -2.24e-1
 
+// y ppm = 24.5 * z mg/m3 / M
 var gasParas = map[string][]float64{
-	"CO2": {5.30, -0.34, 414},
-	"Tol": {3.49, -0.32, 0.0487},
+	"CO2": {5.30, -0.34},
+	"Tol": {3.49, -0.32},
 }
 
-const calibaraionSampleTimes = 100
-const calibrationSampleInterval = 500
 const readSampleInterval = 50
 const readSampleTimes = 5
 
@@ -34,20 +33,12 @@ func NewMQ135(mcp *MCP3008, vcc float64, gas string, ro float64, rl float64) *MQ
 	return mq135
 }
 
-func (mq *MQ135) CalibrationRo(temperature float64, humidity float64) float64 {
-	val := 0.0
-	for i := 0; i < calibaraionSampleTimes; i++ {
-		val += mq.MeasureResistance(temperature, humidity)
-		time.Sleep(time.Millisecond * calibrationSampleInterval)
-	}
-
-	val = val / float64(calibaraionSampleTimes)
-
-	//fmt.Println("Rs:", val)
+func (mq *MQ135) MeasureRo(temperature float64, humidity float64, currentGasConcentration float64) float64 {
+	val := mq.MeasureResistance(temperature, humidity)
 
 	//R0 = RS * (1 / A * c)-1/B
 	mq.Ro = val *
-		math.Pow(gasParas[mq.Gas][2]/
+		math.Pow(currentGasConcentration/
 			math.Pow(1.0/gasParas[mq.Gas][0], 1.0/gasParas[mq.Gas][1]),
 			-1.0/(1.0/gasParas[mq.Gas][1]))
 
