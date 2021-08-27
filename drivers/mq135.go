@@ -9,8 +9,11 @@ import (
 var temperatureCorrection = []float64{2.2619e-5, -0.01479, 1.56}
 var humidityCorrection = -2.24e-1
 
-// y ppm = 24.5 * z mg/m3 / M
+// fetch from mq135 data sheet
+// unit transfer: y ppm = 24.5 * z mg/m3 / M
 var gasParas = map[string][]float64{
+	"CO":  {4.8972, -0.2392},
+	"Eth": {3.9593, -0.3031},
 	"CO2": {5.30, -0.34},
 	"Tol": {3.49, -0.32},
 }
