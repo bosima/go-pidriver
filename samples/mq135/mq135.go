@@ -14,7 +14,6 @@ func readTR(dht11 *drivers.DHT11) (float64, float64, error) {
 		return 0.0, 0.0, err
 	}
 
-	rh = rh / 100.0
 	return rh, tmp, nil
 }
 
@@ -36,7 +35,7 @@ func main() {
 	fmt.Println("Collect temperature and humidity...")
 	rh := 0.0
 	tmp := 0.0
-	for i := 0; i < 10; i++ {
+	for i := 0; i < 20; i++ {
 		time.Sleep(time.Second * 2)
 		rh, tmp, err = readTR(dht11)
 		if err != nil {
@@ -80,7 +79,7 @@ func main() {
 
 		// Gas concentration in natural environment:
 		// CO2 414ppm
-		// Tol 0.0292ppm=0.11mg/m3、0.039ppm=0.15mg/m3、0.0532ppm=0.20mg/m3
+		// unit transfer: {y}ppm = 24.5 * {x}mg/m^3 /{M}
 		ro += mq135.MeasureRo(tmp, rh, 414.0)
 		time.Sleep(time.Second * 2)
 	}

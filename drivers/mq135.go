@@ -6,16 +6,26 @@ import (
 	"time"
 )
 
-var temperatureCorrection = []float64{2.2619e-5, -0.01479, 1.56}
-var humidityCorrection = -2.24e-1
+// fetch from mq135 data sheet:
+// temperature: x=[-10 0 10 20 30 40 50]
+// humidity: y=[30 60 85]
+// z=[[1.71,1.44,1.25];[1.59,1.35,1.17];[1.42,1.2,1.05];[1.25,1.07,0.93];[1.15,0.98,0.85];[1.0,0.85,0.73];[0.87,0.74,0.63]]
+// z = p00 + p10*x + p01*y + p20*x^2 + p11*x*y
+// p00 =       1.789  (1.761, 1.818)
+// p10 =     -0.0165  (-0.01782, -0.01518)
+// p01 =   -0.007536  (-0.007996, -0.007076)
+// p20 =   9.921e-06  (-1.118e-05, 3.102e-05)
+// p11 =   6.723e-05  (5.097e-05, 8.349e-05)
+var thCorrection = []float64{1.789, -0.0165, -0.007536, 9.921e-06, 6.723e-05}
 
-// fetch from mq135 data sheet
-// unit transfer: y ppm = 24.5 * z mg/m3 / M
+// fetch from mq135 data sheet: {Rs/Ro}=a{ppm}^b
 var gasParas = map[string][]float64{
 	"CO":  {4.8972, -0.2392},
 	"Eth": {3.9593, -0.3031},
-	"CO2": {5.30, -0.34},
-	"Tol": {3.49, -0.32},
+	"NH3": {6.5320, -0.3982},
+	"Ace": {3.0679, -0.3131},
+	"Tol": {3.4880, -0.3203},
+	"CO2": {5.3892, -0.3535},
 }
 
 const readSampleInterval = 50
@@ -73,11 +83,12 @@ func (mq *MQ135) MeasureResistance(temperature float64, humidity float64) float6
 }
 
 func (mq *MQ135) correctResistance(temperature float64, humidity float64) float64 {
-	a := temperatureCorrection[0]
-	b := temperatureCorrection[1]
-	c := temperatureCorrection[2]
-
-	return a*math.Pow(temperature, 2) + b*temperature + c + humidityCorrection*(humidity-0.65)
+	p00 := thCorrection[0]
+	p10 := thCorrection[1]
+	p01 := thCorrection[2]
+	p20 := thCorrection[3]
+	p11 := thCorrection[4]
+	return p00 + p10*temperature + p01*humidity + p20*math.Pow(temperature, 2) + p11*temperature*humidity
 }
 
 func (mq *MQ135) MeasureVoltage() float64 {
